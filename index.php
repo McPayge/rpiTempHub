@@ -10,7 +10,7 @@ use Aws\DynamoDb\Marshaler;
 // Important for .aws credentials
 putenv("HOME=/var/www/");
 
-print $home;
+// Change according to your region
 $sdk = new Aws\Sdk([
      'region' => 'us-east-1',
      'version' => 'latest'
@@ -37,13 +37,15 @@ $params = [
 	'ExpressionAttributeValues'=>$marshaler->marshalJson($eav_json),
 	];
 
-//echo "Querying .... \n";
+
+//"Querying DynamoDB\n";
 
 try {
     $result = $dynamodb->query($params);
 
     //echo "Query succeeded.\n";
-    // Convert for googleChart
+    
+    // This is for GoogleChart data
     $cntr = 0;
     $chartTemp = [];
     $chartHum  = [];
@@ -51,14 +53,12 @@ try {
     
     foreach ($result['Items'] as $i) {
         $readings = $marshaler->unmarshalItem($i);
-        //array_push($chartTemp, arrray("timestamp" => $readings['Timestamp'], "temperature" => $readings['Temperature']));
         $chartTemp[$cntr] = array($readings['Timestamp'],$readings['Temperature']/100);
         $chartHum[$cntr]  = array($readings['Timestamp'],$readings['Humidity']/100);
         $chartBat[$cntr]  = array($readings['Timestamp'],$readings['BatteryLevel']/1000);
 
         if(0) {
             print $cntr . ": " . $readings['Timestamp'] . ";T=" . $readings['Temperature'] . ";H=" . $readings['Humidity'] . ";A=".$readings['AlarmLevel'] . "\n";
-            //print $readings['Temperature'] . ': ' . $readings['Humidity'] . " ... \n";
         }
 
         // Keep count for googleChart
@@ -70,18 +70,6 @@ try {
     echo $e->getMessage() . "\n";
 
 }
-
-//function drawChart() {
-//    var data = google.visualization.arrayToDataTable([
-//        ['Year', 'Sales', 'Expenses'],
-//        ['2013',  1000,      400],
-//        ['2014',  1170,      460],
-//        ['2015',  660,       1120],
-//        ['2016',  1030,      540]
-//    ]);
-//    
-
-
 ?>
 
 
@@ -101,7 +89,6 @@ try {
       <?php
       for($i=0;$i<$cntr;$i++){
           echo "['" . date("G:i:s",$chartTemp[$i][0]) . "'," . $chartTemp[$i][1] . "]";
-          //echo "['" .$chartTemp[$i][0] . "'," . $chartTemp[$i][1] . "]";
           if($i < $cntr-1) {
               echo ",\n";
           }
@@ -126,7 +113,6 @@ try {
       <?php
       for($i=0;$i<$cntr;$i++){
           echo "['" . date("G:i:s",$chartHum[$i][0]) . "'," . $chartHum[$i][1] . "]";
-          //echo "['" .$chartHum[$i][0] . "'," . $chartHum[$i][1] . "]";
           if($i < $cntr-1) {
               echo ",\n";
           }
@@ -152,7 +138,6 @@ try {
       <?php
       for($i=0;$i<$cntr;$i++){
           echo "['" . date("G:i:s",$chartBat[$i][0]) . "'," . $chartBat[$i][1] . "]";
-          //echo "['" .$chartBat[$i][0] . "'," . $chartBat[$i][1] . "]";
           if($i < $cntr-1) {
               echo ",\n";
           }

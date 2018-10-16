@@ -1,10 +1,17 @@
 #!/usr/bin/env python
-
-
-
 import time
 from RF24 import *
 import RPi.GPIO as GPIO
+import boto3 #Amazon API
+import json
+import decimal
+
+
+
+# Amazon DYNAMODB to store readings, change accordingly.
+dynamoDB = boto3.resource('dynamodb', region_name='us-east-1')
+table = dynamoDB.Table('TempMeas')
+enableSaveDB = 1
 
 
 
@@ -23,6 +30,23 @@ print(" ")
 radio.openReadingPipe(1,rxAddress[0])
 radio.startListening()
 
+
+def saveToDB():
+    print("Saving to DB...")
+    response = table.put_item(
+        Item={
+            'Timestamp':int(time.time()),
+            'SensorID':str(sensorID),
+            'AlarmLevel':alarmLevel,
+            'BatteryLevel':batteryLevel,
+            'Temperature':tempLevel,
+            'Humidity':humidityLevel
+        }
+    )
+    print("PutItem succeeded:")
+    print(json.dumps(response,indent=4))
+
+
 while 1:
     if radio.available():
         while radio.available():
@@ -36,6 +60,18 @@ while 1:
                 humidityLevel = (received_payload[4]<<8) + received_payload[5]
                 batteryLevel=(received_payload[6]<<8) + received_payload[7]
                 print("Received data from SensorID=0x{:x}\nalarmLevel={:d}\ntempLevel={:d}\nhumidityLevel={:d}\nbatteryLevel={:d}\n".format(sensorID, alarmLevel,tempLevel,humidityLevel,batteryLevel))
+                if(enableSaveDB):
+                    saveToDB()
+
+
+
+
+
+    
+            
+    
+    
+                
                 
 
 
